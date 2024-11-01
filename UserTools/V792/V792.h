@@ -15,6 +15,8 @@ class V792: public Digitizer<caen::V792::Packet, QDCHit> {
       uint32_t (*readout)(Board&, caen::V792::Buffer&);
       int      vme_handle;
       uint32_t vme_address;
+      bool     reported_nhits;
+      int      expected_nhits;
     };
 
     struct RawEvent {

@@ -142,6 +142,10 @@ void V792::configure() {
       else
         qdc.set_channel_enabled(channel, enable);
     };
+
+    board.reported_nhits = !cfg_get(
+        m_variables, "expected_nhits", qdc_index, board.expected_nhits
+    );
 #undef cfgint
 #undef cfgbool
 #undef cfgvar
@@ -183,6 +187,24 @@ void V792::readout(unsigned qdc_index, std::vector<caen::V792::Packet>& data) {
   Board& board = boards[qdc_index];
   uint32_t n = board.readout(board, buffer);
   data.insert(data.end(), buffer.begin(), buffer.begin() + n);
+
+  if (board.reported_nhits) return;
+  for (uint32_t i = 0; i < n; ++i)
+    if (buffer[i].type() == caen::V792::Packet::Header) {
+      auto header = buffer[i].as<caen::V792::Header>();
+      if (header.count() != board.expected_nhits) {
+        *m_log
+          << ML(0)
+          << "QDC 0x"
+          << std::hex << std::setfill('0') << std::setw(8) << board.vme_address
+          << std::dec
+          << " got "
+          << static_cast<unsigned>(header.count())
+          << " packets, while expecting "
+          << static_cast<unsigned>(board.expected_nhits);
+        board.reported_nhits = true;
+      };
+    };
 };
 
 uint32_t V792::readout_blt(Board& board, caen::V792::Buffer& buffer) {
