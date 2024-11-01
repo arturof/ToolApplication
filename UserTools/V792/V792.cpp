@@ -309,10 +309,7 @@ void V792::process(
     if (ptrailer < qdc_data.end()) {
       auto trailer = ptrailer->as<caen::V792::EndOfBlock>();
       process(
-          get_event,
-          header,
-          static_cast<caen::V792::Data*>(&*packet),
-          trailer
+          get_event, header, static_cast<caen::V792::Data*>(&*packet), trailer
       );
       packet = ptrailer;
       ++packet;

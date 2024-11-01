@@ -3,9 +3,16 @@
 
 template <typename Hit>
 void generate_readout(VMEReadout<Hit>& readout, int nevents, int nhits) {
-  std::deque<std::vector<Hit>> events;
+  std::deque<typename VMEReadout<Hit>::Event> events;
   for (int i = 0; i < nevents; ++i)
-    events.push_back(std::vector<Hit>(nhits));
+    events.push_back(
+        {
+          std::chrono::time_point_cast<std::chrono::milliseconds>(
+              VMEReadout<Hit>::Time::clock::now()
+          ),
+          std::vector<Hit>(nhits)
+        }
+    );
   readout.push(events.begin(), events.end());
 };
 

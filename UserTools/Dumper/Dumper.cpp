@@ -5,11 +5,18 @@
 template <typename Hit>
 static void dump(VMEReadout<Hit>& readout, std::ofstream& stream) {
   auto r = readout.get();
-  for (auto& event : r)
+  for (auto& event : r) {
+    uint64_t time = event.time.time_since_epoch().count();
+    stream.write(reinterpret_cast<char*>(&time), sizeof(time));
+
+    uint8_t size = event.hits.size();
+    stream.write(reinterpret_cast<char*>(&size), sizeof(size));
+
     stream.write(
-        reinterpret_cast<char*>(event.data()),
-        sizeof(*event.data()) * event.size()
+        reinterpret_cast<char*>(event.hits.data()),
+        sizeof(*event.hits.data()) * size
     );
+  };
 };
 
 void Dumper::dump() {

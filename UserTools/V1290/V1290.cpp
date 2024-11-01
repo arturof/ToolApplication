@@ -322,10 +322,10 @@ void V1290::stop_acquisition() {
 };
 
 void V1290::process(
-    size_t                                  cycle,
-    const std::function<Event& (uint32_t)>& get_event,
-    unsigned                                tdc_index,
-    std::vector<caen::V1290::Packet>        tdc_data
+    size_t                                   cycle,
+    const std::function<Event& (uint32_t)>&  get_event,
+    unsigned                                 tdc_index,
+    std::vector<caen::V1290::Packet>         tdc_data
 ) {
   if (tdc_data.empty()) return;
 

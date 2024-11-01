@@ -4,6 +4,7 @@
 #include <deque>
 #include <mutex>
 #include <vector>
+#include <chrono>
 
 #include <zmq.hpp>
 
@@ -13,19 +14,34 @@
 template <typename Hit>
 class VMEReadout {
 public:
+  using Time = std::chrono::time_point<
+    std::chrono::system_clock,
+    std::chrono::milliseconds
+  >;
+
+  struct Event {
+    Time             time;
+    std::vector<Hit> hits;
+  };
+
   template <typename Iterator>
   void push(Iterator begin, Iterator end);
   
-  std::deque<std::vector<Hit>> get();
+  std::deque<Event> get();
+
+  // Should be named getHits or, better, pop_hits.
+  // Keep it compatible with the upstream.
   std::vector<Hit> getEvent();
+
   bool Send(zmq::socket_t* sock);
   bool Receive(zmq::socket_t* sock);
   unsigned int size() const { return readout.size(); }
   bool empty() const { return readout.empty(); };
   
 private:
+
   std::mutex mutex;
-  std::deque<std::vector<Hit> > readout;
+  std::deque<Event> readout;
 };
 
 template <typename Hit>
@@ -36,7 +52,8 @@ void VMEReadout<Hit>::push(Iterator begin, Iterator end) {
 };
 
 template <typename Hit>
-std::deque<std::vector<Hit>> VMEReadout<Hit>::get() {
+std::deque<typename VMEReadout<Hit>::Event>
+VMEReadout<Hit>::get() {
   std::lock_guard<std::mutex> lock(mutex);
   return std::move(readout);
 };
@@ -44,16 +61,10 @@ std::deque<std::vector<Hit>> VMEReadout<Hit>::get() {
 template <typename Hit>
 std::vector<Hit> VMEReadout<Hit>::getEvent() {
   std::lock_guard<std::mutex> lock(mutex);
-  ///// this is inefficent ben multiple copies
-  if(readout.size()>0){
-    std::vector<Hit> ret= readout.at(0);
-    readout.pop_front();
-    return ret;
-  }
-  else {
-    std::vector<Hit> tmp;
-    return tmp;
-  }
+  if (readout.empty()) return std::vector<Hit>();
+  std::vector<Hit> result = std::move(readout.front().hits);
+  readout.pop_front();
+  return result;
 };
 
 namespace VMEReadout_ {
@@ -72,7 +83,7 @@ template <typename Hit>
 bool VMEReadout<Hit>::Send(zmq::socket_t* socket) {
   if (this->readout.empty()) return true;
 
-  std::deque<std::vector<Hit>> readout;
+  std::deque<Event> readout;
   {
     std::lock_guard<std::mutex> lock(mutex);
     readout.swap(this->readout);
@@ -88,11 +99,14 @@ bool VMEReadout<Hit>::Send(zmq::socket_t* socket) {
 
   auto event = readout.begin();
   while (event != readout.end()) {
-    size_t size = sizeof(Hit) * event->size();
-    zmq::message_t packet(size);
-    memcpy(packet.data(), event->data(), size);
-    if (!socket->send(packet, ++event == readout.end() ? 0 : ZMQ_SNDMORE))
-      return false;
+    zmq::message_t time(sizeof(Time));
+    memcpy(time.data(), &event->time, sizeof(Time));
+    if (!socket->send(time, ZMQ_SNDMORE)) return false;
+
+    size_t size = sizeof(Hit) * event->hits.size();
+    zmq::message_t hits(size);
+    memcpy(hits.data(), event->hits.data(), size);
+    if (!socket->send(hits, ++event == readout.end() ? 0 : ZMQ_SNDMORE)) return false;
   };
 
   return true;
@@ -100,13 +114,21 @@ bool VMEReadout<Hit>::Send(zmq::socket_t* socket) {
 
 template <typename Hit>
 bool VMEReadout<Hit>::Receive(zmq::socket_t* socket) {
-  std::deque<std::vector<Hit>> readout;
+  std::deque<Event> readout;
   while (true) {
     zmq::message_t packet;
     if (!socket->recv(&packet)) return false;
-    std::vector<Hit> event(packet.size() / sizeof(Hit));
-    memcpy(event.data(), packet.data(), packet.size());
-    readout.push_back(std::move(event));
+
+    Time time;
+    if (packet.size() == sizeof(Time)) {
+      memcpy(&time, packet.data(), sizeof(Time));
+      if (!socket->recv(&packet)) return false;
+    };
+
+    std::vector<Hit> hits(packet.size() / sizeof(Hit));
+    memcpy(hits.data(), packet.data(), packet.size());
+    readout.push_back({ time, std::move(hits) });
+
     if (!packet.more()) break;
   };
 

@@ -20,12 +20,18 @@ class Digitizer: public ToolFramework::Tool {
     bool acquiring() const { return acquiring_; };
 
   protected:
-    struct Event {
-      std::vector<Hit> hits;
+    struct Event: VMEReadout<Hit>::Event {
       std::unique_ptr<std::mutex> mutex;
 
-      Event(): mutex(new std::mutex()) {};
-      Event(Event&& event): mutex(std::move(event.mutex)) {};
+      Event(typename VMEReadout<Hit>::Time time):
+        VMEReadout<Hit>::Event { time },
+        mutex(new std::mutex())
+      {};
+
+      Event(Event&& event):
+        VMEReadout<Hit>::Event(event),
+        mutex(std::move(event.mutex))
+      {};
     };
 
     template <typename RawEvent>
@@ -74,6 +80,7 @@ class Digitizer: public ToolFramework::Tool {
 
   private:
     struct Readout {
+      typename VMEReadout<Hit>::Time   time;
       std::vector<std::vector<Packet>> data;
       size_t                           cycle;
     };
@@ -155,7 +162,16 @@ void Digitizer<Packet, Hit>::readout() {
     delete arg;
     return result;
   };
-  job->data = new arg_t { *this, { std::move(data), readout_cycle++ } };
+  job->data = new arg_t {
+    *this,
+    Readout {
+      std::chrono::time_point_cast<std::chrono::milliseconds>(
+          VMEReadout<Hit>::Time::clock::now()
+      ),
+      std::move(data),
+      readout_cycle++
+    }
+  };
 
   m_data->job_queue.AddJob(job);
 };
@@ -176,7 +192,7 @@ bool Digitizer<Packet, Hit>::process(Readout readout) {
             std::lock_guard<std::mutex> lock(events_mutex);
             auto pevent = events.lower_bound(ievent);
             if (pevent == events.end() || pevent->first != ievent)
-              pevent = events.insert(pevent, { ievent, Event() });
+              pevent = events.insert(pevent, { ievent, Event(readout.time) });
             return pevent->second;
           },
           iboard,
@@ -255,36 +271,36 @@ void Digitizer<Packet, Hit>::submit(
     typename std::map<uint32_t, Event>::iterator begin,
     typename std::map<uint32_t, Event>::iterator end
 ) {
-  class hits_iterator {
+  class values_iterator {
     public:
-      hits_iterator(typename std::map<uint32_t, Event>::iterator iterator):
+      values_iterator(typename std::map<uint32_t, Event>::iterator iterator):
         iterator(iterator)
       {};
 
-      bool operator!=(const hits_iterator& i) {
+      bool operator!=(const values_iterator& i) {
         return iterator != i.iterator;
       };
 
-      hits_iterator& operator++() {
+      values_iterator& operator++() {
         ++iterator;
         return *this;
       };
 
-      hits_iterator  operator++(int) {
-        hits_iterator i(iterator);
+      values_iterator  operator++(int) {
+        values_iterator i(iterator);
         ++iterator;
         return i;
       };
 
-      std::vector<Hit>& operator*() const {
-        return iterator->second.hits;
+      Event& operator*() const {
+        return iterator->second;
       };
 
     public:
       typename std::map<uint32_t, Event>::iterator iterator;
   };
 
-  output->push(hits_iterator(begin), hits_iterator(end));
+  output->push(values_iterator(begin), values_iterator(end));
 };
 
 template <typename Packet, typename Hit>
