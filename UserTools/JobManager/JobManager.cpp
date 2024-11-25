@@ -48,6 +48,10 @@ bool JobManager::Execute(){
 
 
 bool JobManager::Finalise(){
+  bool wait;
+  if (m_variables.Get("wait_for_jobs", wait) && wait)
+    while (m_data->job_queue.size())
+      usleep(10000);
   
   delete worker_pool_manager;
   worker_pool_manager=0;
