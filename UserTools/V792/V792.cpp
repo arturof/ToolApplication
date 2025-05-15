@@ -160,9 +160,10 @@ void V792::init(unsigned& nboards, VMEReadout<QDCHit>*& output) {
   nboards = boards.size();
   output  = &m_data->qdc_readout;
   on_spill = m_data->AlertSubscribe(
-      "SpillCount",
+      "SpillNum",
       [this](const char* alert, const char* payload) {
-        for (auto& board : boards) board.qdc.reset_event_counter();
+        std::cout << "QDC: spill count received" << std::endl;
+        //for (auto& board : boards) board.qdc.reset_event_counter();
       }
   );
 };
@@ -201,7 +202,7 @@ void V792::readout(unsigned qdc_index, std::vector<caen::V792::Packet>& data) {
           << " got "
           << static_cast<unsigned>(header.count())
           << " packets, while expecting "
-          << static_cast<unsigned>(board.expected_nhits);
+          << static_cast<unsigned>(board.expected_nhits) << std::endl;
         board.reported_nhits = true;
       };
     };

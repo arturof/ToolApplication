@@ -296,9 +296,10 @@ void V1290::init(unsigned& nboards, VMEReadout<TDCHit>*& output) {
   nboards = boards.size();
   output  = &m_data->tdc_readout;
   on_spill = m_data->AlertSubscribe(
-      "SpillCount",
+      "SpillNum",
       [this](const char* alert, const char* payload) {
-        for (auto& board : boards) board.tdc.reset_event();
+        std::cout << "TDC: spill count received" << std::endl;
+        //for (auto& board : boards) board.tdc.reset_event();
       }
   );
 };
