@@ -26,6 +26,7 @@ class Dumper: public ToolFramework::Tool {
 
     void open(std::ofstream& stream, const std::string& variable);
     void dump();
+    int run;
 
     static void dumper_thread(ToolFramework::Thread_args* args);
 };

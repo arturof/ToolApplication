@@ -43,9 +43,44 @@ void Dumper::dumper_thread(ToolFramework::Thread_args* args) {
 };
 
 void Dumper::open(std::ofstream& stream, const std::string& var) {
+
+  // open run summary file to get the next run number
+  std::string last_line;
+  std::ifstream fruns("run_summary.txt");
+  if (fruns && fruns.is_open()) {
+    std::string line;
+    while (getline(fruns,line)) {
+      last_line = line;
+    }
+    fruns.close();
+  }
+  else {
+    std::cout << "Couldn't open run summary file" << std::endl;
+  }
+
+  // output file name with run number
+  std::stringstream ssi(last_line);
+  run = 0;
+  ssi >> run;
+  run++;
+  std::stringstream sso;
+  sso << std::setw(4) << std::setfill('0') << run;
+
   std::string filename;
   if (!m_variables.Get(var, filename)) filename = var + ".out";
-  stream.open(filename, std::ios::binary | std::ios::out);
+  filename += "_run" + sso.str() + ".out";
+  *m_log << ML(0) << "Output filename " << filename << std::endl;
+
+  // open outfile file only if it doesn't exist
+  std::ifstream check(filename);
+  if (check.is_open()) {
+    check.close();
+    *m_log << ML(0) << "Output filename " << filename << " already exists" << std::endl;
+  }
+  else {
+    stream.open(filename, std::ios::binary | std::ios::out);
+  }
+
   if (!stream)
     throw std::runtime_error(
         std::string("Cannot open ")
@@ -64,10 +99,30 @@ bool Dumper::Initialise(std::string configfile, DataModel& data) {
 
     if (!m_variables.Get("verbose", m_verbose)) m_verbose = 1;
 
+    // open output files
     open(tdc, "tdc");
     open(qdc, "qdc");
 
+    // update run summary file
+    std::ofstream fruns("run_summary.txt", std::ios::app);
+    if (fruns && fruns.is_open()) {
+      fruns << std::setw(4) << std::setfill('0') << run << std::endl;
+      fruns.close();
+    }
+    else {
+      std::cout << "Couldn't open run summary file" << std::endl;
+    }
+    std::cout << "Summary file updated with run " << run << std::endl;
+
+    // print run start time
+    auto start = std::chrono::system_clock::now();
+    std::time_t start_time = std::chrono::system_clock::to_time_t(start);
+    std::cout << "Run initialised on " << std::ctime(&start_time) << std::endl;
+
     ExportConfiguration();
+
+    if (!tdc.is_open()) return false;
+    if (!qdc.is_open()) return false;
 
     return true;
 
@@ -102,6 +157,11 @@ bool Dumper::Finalise() {
     };
     if (tdc) tdc.close();
     if (qdc) qdc.close();
+
+    // print run stop time
+    auto end = std::chrono::system_clock::now();
+    std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+    std::cout << "Run finalised on " << std::ctime(&end_time) << std::endl;
 
     return true;
   } catch (std::exception& e) {
