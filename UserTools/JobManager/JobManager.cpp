@@ -64,6 +64,6 @@ void JobManager::LoadConfig(){
   if(!m_variables.Get("verbose",m_verbose)) m_verbose=1;
   if(!m_variables.Get("thread_cap",m_thread_cap)) m_thread_cap=20;
   if(!m_variables.Get("global_thread_cap",m_data->thread_cap)) m_data->thread_cap=20; 
-  m_thread_cap=200;
-  m_data->thread_cap=200;
+  //m_thread_cap=200;
+  //m_data->thread_cap=200;
 }
