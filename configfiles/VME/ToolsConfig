@@ -1,2 +1,13 @@
-test1 DummyTool configfiles/VME/DummyToolConfig
-test2 DummyTool configfiles/VME/DummyToolConfig
+JobManager JobManager configfiles/VME/JobManager.cfg
+
+#configure CFD
+#CFD V812 configfiles/VME/cfd_v812.cfg
+
+#readout TDC
+TDC V1290 configfiles/VME/tdc_v1290.cfg
+
+#readout QDC
+QDC V792 configfiles/VME/qdc_v792.cfg
+
+#save TDC QDC data
+Dumper Dumper configfiles/VME/dumper.cfg
