@@ -108,7 +108,7 @@ void FileWriter::Thread(Thread_args* arg){
   WCTERawData tmp;
   
   tmp.readout_windows.reserve(readout_windows->size());
-  printf("readout_windows->size()=%u\n",readout_windows->size());  
+  printf("readout_windows->size()=%lu\n",readout_windows->size());
   for(unsigned int i=0; i<readout_windows->size(); i++){
     if((readout_windows->at(i))->triggers_info.size() ==0)printf("eeror 1 in file\n");
     //printf("d1\n");

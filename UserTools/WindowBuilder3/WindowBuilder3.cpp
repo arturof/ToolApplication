@@ -73,7 +73,7 @@ void WindowBuilder3::Thread(Thread_args* arg){
   args->data->triggered_data.clear();
   //std::swap(args->data->triggered_data.begin(),myints+7, myvector.begin());
   args->data->triggered_data_mtx.unlock();
-   printf("triggered size=%u\n", args->triggered_data.size());
+   printf("triggered size=%lu\n", args->triggered_data.size());
 
    std::vector<std::shared_ptr<MPMTData> > shared_ptrs;
    /*  
@@ -135,7 +135,7 @@ void WindowBuilder3::Thread(Thread_args* arg){
       }
 
       job_args->triggered_data.push_back(shared_ptrs.back());
-      printf("out size=%u\n", job_args->triggered_data.size());
+      printf("out size=%lu\n", job_args->triggered_data.size());
 
       if(post_cluster){
 	shared_ptrs.emplace_back(args->triggered_data[it->first+1]);	
@@ -593,7 +593,7 @@ bool WindowBuilder3::BuildWindow(void* data){
  BuildWindow_args* args=reinterpret_cast<BuildWindow_args*>(data);
  
  // for (int i=0; i<args->triggered_data.size(); i++){
- printf("u1 Pre,post,size %d,%d,%u\n",args->pre_cluster,args->post_cluster,args->triggered_data.size());
+ printf("u1 Pre,post,size %d,%d,%lu\n",args->pre_cluster,args->post_cluster,args->triggered_data.size());
 
  /*if(args->pre_cluster){
  printf("u1.1\n");

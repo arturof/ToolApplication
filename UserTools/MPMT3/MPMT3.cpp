@@ -207,7 +207,7 @@ void MPMT3::Thread(Thread_args* arg){
     args->m_data->monitoring_store.Set("connected_MPMTs",num_connections);
     args->m_data->monitoring_store_mtx.unlock();
     args->last= boost::posix_time::microsec_clock::universal_time();
-    printf("conenctions=%d: %u\n",args->connections.size(), args->m_data->unsorted_data.size());
+    printf("conenctions=%ld: %lu\n",args->connections.size(), args->m_data->unsorted_data.size());
   }
   
   zmq::poll(&(args->items[0]), 1, 100);

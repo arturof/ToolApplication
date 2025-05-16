@@ -31,14 +31,14 @@ struct MPMTData{
   std::vector<TriggerInfo> unmerged_triggers;
   void Print(){
     printf("coarse_counter=%u\n", coarse_counter);
-    printf("mpmt_hits.size()=%d\n", mpmt_hits.size());
-    printf("mpmt_waveforms.size()=%d\n", mpmt_waveforms.size());
-    printf("mpm_leds.size()=%d\n", mpmt_leds.size());
-    printf("mpm_pps.size()=%d\n", mpmt_pps.size());
-    printf("mpm_triggers.size()=%d\n", mpmt_triggers.size());
-    printf("extra_hits.size()=%d\n", extra_hits.size());
-    printf("extra_waveforms.size()=%d\n", extra_waveforms.size());
-    printf("unmerged_triggers.size()=%d\n\n", unmerged_triggers.size()); 
+    printf("mpmt_hits.size()=%ld\n", mpmt_hits.size());
+    printf("mpmt_waveforms.size()=%ld\n", mpmt_waveforms.size());
+    printf("mpm_leds.size()=%ld\n", mpmt_leds.size());
+    printf("mpm_pps.size()=%ld\n", mpmt_pps.size());
+    printf("mpm_triggers.size()=%ld\n", mpmt_triggers.size());
+    printf("extra_hits.size()=%ld\n", extra_hits.size());
+    printf("extra_waveforms.size()=%ld\n", extra_waveforms.size());
+    printf("unmerged_triggers.size()=%ld\n\n", unmerged_triggers.size());
   }
 };
 
